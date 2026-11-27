@@ -27,7 +27,13 @@ test("acento e emoji contam 1 cada", () => {
 
 // entradas invalidas
 test("da erro quando texto nao e string", () => {
-  const invalidos = [{ texto: 123 }, { texto: null }, { texto: ["a"] }, {}, undefined];
+  const invalidos = [
+    { texto: 123 },
+    { texto: null },
+    { texto: ["a"] },
+    {},
+    undefined,
+  ];
   for (const entrada of invalidos) {
     assert.throws(() => feature.execute(entrada), Error);
   }
