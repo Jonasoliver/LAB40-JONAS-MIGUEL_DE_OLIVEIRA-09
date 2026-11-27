@@ -1,0 +1,53 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  entrega:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar e testar
+        run: |
+          npm ci
+          npm run lint
+          npm test
+
+      - name: Build da imagem
+        run: docker build -t lab40:feature09 -t lab40:${{ github.sha }} .
+
+      - name: Testar container
+        run: |
+          docker run -d --name lab40 -p 3000:3000 lab40:${{ github.sha }}
+          sleep 3
+          curl --fail http://localhost:3000/health
+          curl --fail -X POST http://localhost:3000/api/features/9 -H "Content-Type: application/json" -d '{"texto":"FATEC"}'
+          docker rm -f lab40
+
+      - name: Gerar imagem.tar e deployment-record.txt
+        run: |
+          mkdir entrega
+          docker save lab40:feature09 lab40:${{ github.sha }} -o entrega/imagem.tar
+          echo "repositorio: ${{ github.repository }}" > entrega/deployment-record.txt
+          echo "branch: ${{ github.ref_name }}" >> entrega/deployment-record.txt
+          echo "commit: ${{ github.sha }}" >> entrega/deployment-record.txt
+          echo "imagem: lab40:feature09 / lab40:${{ github.sha }}" >> entrega/deployment-record.txt
+          echo "autor: ${{ github.actor }}" >> entrega/deployment-record.txt
+          echo "data: $(date -u)" >> entrega/deployment-record.txt
+          cat entrega/deployment-record.txt
+
+      - name: Deploy simulado
+        run: echo "deploy simulado da imagem lab40:${{ github.sha }} concluido"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lab40-delivery-record
+          path: entrega/
