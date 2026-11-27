@@ -3,13 +3,18 @@
 // Exemplo de entrada: { texto: 'FATEC' }
 // Implemente conforme as regras e critérios do enunciado fornecido pelo professor.
 
-const implemented = false;
+const implemented = true;
 
 // Desenvolva a regra de negócio e valide todos os dados de entrada.
 function execute(input) {
-  // TODO: substituir este bloco pela implementação testada da funcionalidade.
-  void input;
-  throw new Error("Funcionalidade ainda não implementada.");
+  const texto = input ? input.texto : undefined;
+
+  if (typeof texto !== "string") {
+    throw new Error("O campo texto deve ser uma string.");
+  }
+
+  // Array.from separa por caractere unicode, assim acento e emoji contam como 1
+  return { quantidade: Array.from(texto).length };
 }
 
 // Mantém o contrato de integração utilizado pela API central.
@@ -18,5 +23,5 @@ module.exports = {
   name: "Contador de caracteres",
   description: "Conta caracteres de uma string.",
   implemented,
-  execute
+  execute,
 };

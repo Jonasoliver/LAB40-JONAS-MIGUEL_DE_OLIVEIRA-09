@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Formatacao
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes
+        run: npm test
+
+      - name: Smoke test
+        run: npm run test:smoke
+
+      - name: Auditoria
+        run: npm audit --audit-level=high
+
+  docker:
+    needs: testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build da imagem
+        run: docker build -t lab40:feature09 -t lab40:${{ github.sha }} .
+
+      - name: Subir container
+        run: docker run -d --name lab40 -p 3000:3000 lab40:${{ github.sha }}
+
+      - name: Testar /health
+        run: |
+          sleep 3
+          curl --fail http://localhost:3000/health
+
+      - name: Testar endpoint da feature 09
+        run: |
+          curl --fail -X POST http://localhost:3000/api/features/9 \
+            -H "Content-Type: application/json" \
+            -d '{"texto":"FATEC"}'
+
+      - name: Parar container
+        if: always()
+        run: docker rm -f lab40
+
+      - name: Salvar imagem
+        run: docker save lab40:feature09 lab40:${{ github.sha }} -o lab40-feature09.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lab40-image
+          path: lab40-feature09.tar
+          retention-days: 3
